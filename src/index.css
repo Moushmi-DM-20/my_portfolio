@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --hero-red: #d03d36;
+  --deep-crimson: #922626;
+  --warm-white: #FFF9F5;
+  --champagne: #F0D7B5;
+  --dark-charcoal: #292426;
+  --light-bg: #FAF8F6;
+  --light-card: #FFFFFF;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: var(--hero-red);
+  color: var(--dark-charcoal);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background-color: var(--light-bg);
+}
+
+/* Custom Scrollbar for page */
+::-webkit-scrollbar {
+  width: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1edea;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d03d36;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #922626;
+}
+
+/* Eradicate any scrollbar in header and navbar permanently */
+header, nav, nav * {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+header::-webkit-scrollbar,
+nav::-webkit-scrollbar,
+nav *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Frosted glass header pills */
+.glass-pill-dark {
+  background: rgba(30, 25, 27, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.glass-pill-light {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(41, 36, 38, 0.08);
+  box-shadow: 0 10px 30px rgba(41, 36, 38, 0.08);
+}
+
+/* Hero Frosted Glass Elements */
+.hero-glass-pill {
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Elegant light cards for lower sections */
+.luxury-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(41, 36, 38, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(41, 36, 38, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px -4px rgba(41, 36, 38, 0.1);
+  border-color: rgba(208, 61, 54, 0.25);
+}
+
+/* Cursive Name Soft Shadow */
+.text-shadow-name {
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Custom Cursor - Responsive & Multi-theme with perfect GPU center alignment */
+@media (hover: hover) and (pointer: fine) {
+  .custom-cursor-dot {
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    margin-top: -3px;
+    border-radius: 50%;
+    z-index: 9999;
+    will-change: transform;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+  }
+
+  .custom-cursor-ring {
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 36px;
+    height: 36px;
+    margin-left: -18px;
+    margin-top: -18px;
+    border-radius: 50%;
+    transform-origin: center center;
+    z-index: 9998;
+    will-change: transform;
+    transition: border-color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+  }
+
+  /* Cursor on Hero / Dark surface (Contact) */
+  .cursor-theme-dark .custom-cursor-dot {
+    background-color: #ffffff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+  }
+
+  .cursor-theme-dark .custom-cursor-ring {
+    border: 1.5px solid rgba(255, 255, 255, 0.7);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+  }
+
+  /* Cursor on Light sections */
+  .cursor-theme-light .custom-cursor-dot {
+    background-color: #d03d36;
+    box-shadow: 0 0 8px rgba(208, 61, 54, 0.6);
+  }
+
+  .cursor-theme-light .custom-cursor-ring {
+    border: 1.5px solid rgba(208, 61, 54, 0.55);
+    background: radial-gradient(circle, rgba(208, 61, 54, 0.08) 0%, rgba(208, 61, 54, 0) 70%);
+  }
+}
+
+/* Hide custom cursor completely on touch devices */
+@media (hover: none) or (pointer: coarse) {
+  .custom-cursor-dot,
+  .custom-cursor-ring,
+  .cursor-container {
+    display: none !important;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
