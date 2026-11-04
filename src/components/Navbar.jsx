@@ -31,7 +31,7 @@ export default function Navbar({ activeSection, onNavigate, onTriggerWave }) {
   return (
     <header className="fixed top-3 sm:top-4 left-0 right-0 z-50 flex justify-center items-center px-2 sm:px-3 pointer-events-none select-none">
       <nav 
-        className={`pointer-events-auto flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-full transition-all duration-300 max-w-full shadow-lg ${
+        className={`pointer-events-auto flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-full transition-all duration-300 max-w-full shadow-lg ${
           scrolled 
             ? 'glass-pill-dark text-white shadow-2xl' 
             : 'hero-glass-pill text-white shadow-xl'
@@ -47,13 +47,13 @@ export default function Navbar({ activeSection, onNavigate, onTriggerWave }) {
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`px-2.5 sm:px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-medium tracking-wide transition-all duration-200 flex items-center gap-1 sm:gap-1.5 whitespace-nowrap active:scale-95 ${
+                className={`px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium tracking-wide transition-all duration-200 flex items-center gap-0.5 sm:gap-1.5 whitespace-nowrap active:scale-95 ${
                   isActive
                     ? 'bg-white text-[#d03d36] shadow-sm font-bold'
                     : 'text-white/85 hover:text-white hover:bg-white/10'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#d03d36]' : 'text-white/70'}`} />
+                <Icon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${isActive ? 'text-[#d03d36]' : 'text-white/70'}`} />
                 <span>{item.label}</span>
               </button>
             );

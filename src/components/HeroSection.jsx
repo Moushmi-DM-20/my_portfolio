@@ -8,6 +8,7 @@ const RESTING_FRAME = 43; // Hand completely lowered below frame
 export default function HeroSection({ onNavigate, waveTrigger }) {
   const canvasRef = useRef(null);
   const contentRef = useRef(null);
+  const stageRef = useRef(null);
   const imagesRef = useRef([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
@@ -151,36 +152,32 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
       targetCenterX = displayW * 0.74;
       targetBottomY = displayH + 5;
     } else {
-      // Mobile (< 768px):
-      // Calculate content bottom boundary so character sits below buttons without overlapping
-      let contentBottomY = 0;
-      if (contentRef.current) {
+      // Mobile & Small Screens (< 768px):
+      // Measure dedicated stage area in the DOM so character is never cut off
+      let stageTop = displayH * 0.48;
+      let stageBottom = displayH;
+      let stageH = displayH * 0.52;
+
+      if (stageRef.current && canvas) {
+        const sRect = stageRef.current.getBoundingClientRect();
+        const pRect = canvas.getBoundingClientRect();
+        stageTop = Math.max(0, sRect.top - pRect.top);
+        stageBottom = Math.min(displayH, sRect.bottom - pRect.top);
+        stageH = Math.max(180, stageBottom - stageTop);
+      } else if (contentRef.current && canvas) {
         const cRect = contentRef.current.getBoundingClientRect();
         const pRect = canvas.getBoundingClientRect();
-        contentBottomY = cRect.bottom - pRect.top;
+        stageTop = Math.max(0, cRect.bottom - pRect.top + 8);
+        stageBottom = displayH;
+        stageH = Math.max(180, stageBottom - stageTop);
       }
 
-      // Available vertical space in lower half of viewport
-      const availableSpaceBelow = displayH - contentBottomY;
-      
-      // Calculate scale such that character fits within available space below content
-      // with a safe breathing margin above her head
-      if (contentBottomY > 0 && availableSpaceBelow > 180) {
-        const maxFitScale = Math.max(0.32, (availableSpaceBelow - 16) / videoH);
-        scale = Math.min(maxFitScale, (displayW * 0.92) / 800, 0.48);
-      } else {
-        scale = Math.min((displayH * 0.46) / videoH, (displayW * 0.90) / 800);
-      }
+      // Character fits cleanly within stageH and screen width
+      scale = Math.min((stageH * 0.98) / videoH, (displayW * 0.96) / 800, 0.46);
+      scale = Math.max(scale, 0.28);
 
       targetCenterX = displayW * 0.5;
-      
-      // Ensure character top (targetBottomY - drawH) is strictly below buttons
-      const drawH = videoH * scale;
-      if (contentBottomY > 0 && (displayH + 5 - drawH) < (contentBottomY + 12)) {
-        targetBottomY = contentBottomY + drawH + 12;
-      } else {
-        targetBottomY = displayH + 5;
-      }
+      targetBottomY = stageBottom + 5;
     }
 
     const drawW = videoW * scale;
@@ -200,14 +197,22 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
     ctx.restore();
   }, []);
 
-  // Redraw on resize
+  // Redraw on resize and orientation change
   useEffect(() => {
     const handleResize = () => {
       drawFrame(currentFrame);
     };
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
     drawFrame(currentFrame);
-    return () => window.removeEventListener('resize', handleResize);
+    const timer = setTimeout(() => {
+      drawFrame(currentFrame);
+    }, 120);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      clearTimeout(timer);
+    };
   }, [drawFrame, currentFrame]);
 
   // Click handler on character
@@ -218,7 +223,7 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
   return (
     <section 
       id="home" 
-      className="relative w-full min-h-[100svh] min-h-[640px] lg:min-h-screen overflow-hidden bg-[#d03d36] flex flex-col justify-start lg:justify-center select-none"
+      className="relative w-full min-h-[100svh] overflow-hidden bg-[#d03d36] flex flex-col md:flex-row md:items-center justify-between select-none"
     >
       {/* 60FPS Crisp Canvas Character Renderer */}
       <div 
@@ -232,7 +237,7 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
         />
 
         {/* Subtle, understated wave badge - desktop */}
-        <div className="hidden lg:block absolute bottom-8 right-12 z-10">
+        <div className="hidden md:block absolute bottom-8 right-12 z-10">
           <button 
             onClick={(e) => {
               e.stopPropagation();
@@ -244,57 +249,44 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
             <span>{isWaving ? "Make mistakes. Learn. Improve. :)" : "Someone's curious! 👋 Tap me"}</span>
           </button>
         </div>
-
-        {/* Mobile tap badge */}
-        <div className="lg:hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCharacterClick();
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#3D0F0E]/75 border border-[#F5C28F]/40 text-[#FDEBD0] text-[11px] font-medium tracking-wide shadow-md active:scale-95 backdrop-blur-md whitespace-nowrap"
-          >
-            <span>{isWaving ? "Make mistakes. Learn. Improve. :)" : "👀 Someone's curious! 👋 Tap me "}</span>
-          </button>
-        </div>
       </div>
 
       {/* Hero Typography & Content (Mobile-optimized Alignment & Spacing) */}
       <div 
         ref={contentRef}
-        className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-10 lg:px-16 pt-16 sm:pt-20 lg:pt-0 pb-4 lg:pb-0 pointer-events-none"
+        className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 pt-14 sm:pt-20 lg:pt-0 pb-2 lg:pb-0 pointer-events-none"
       >
         <div className="max-w-2xl md:max-w-md lg:max-w-xl xl:max-w-2xl pointer-events-auto">
           
           {/* Eyebrow Pill with warm champagne border and pulsing gold dot */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#3D0F0E]/60 border border-[#F5C28F]/40 backdrop-blur-md shadow-sm mb-3 sm:mb-5 text-[10px] sm:text-xs font-semibold tracking-wider text-[#FDEBD0] uppercase">
+          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 sm:px-4 sm:py-2 rounded-full bg-[#3D0F0E]/60 border border-[#F5C28F]/40 backdrop-blur-md shadow-sm mb-2 sm:mb-4 text-[10px] sm:text-xs font-semibold tracking-wider text-[#FDEBD0] uppercase max-w-full">
             <span className="leading-tight">Every challenge is another opportunity to build better</span>
           </div>
 
           {/* Greeting in warm radiant champagne */}
-          <p className="text-base sm:text-lg lg:text-xl font-medium tracking-wide text-[#FCD5B5] mb-1 sm:mb-2 drop-shadow-xs">
+          <p className="text-sm sm:text-lg lg:text-xl font-medium tracking-wide text-[#FCD5B5] mb-1 sm:mb-2 drop-shadow-xs">
             Hey, I'm
           </p>
 
           {/* Name: Luminous luxury gradient heading */}
-          <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight leading-tight sm:leading-none mb-2 sm:mb-4 bg-gradient-to-r from-[#FFFFFF] via-[#FFF5E6] to-[#FCD5B5] bg-clip-text text-transparent drop-shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+          <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl lg:text-9xl font-bold tracking-tight leading-tight sm:leading-none mb-1.5 sm:mb-3 bg-gradient-to-r from-[#FFFFFF] via-[#FFF5E6] to-[#FCD5B5] bg-clip-text text-transparent drop-shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
             Moushmi
           </h1>
 
           {/* Designation with warm amber accent line */}
-          <div className="flex items-center gap-3 mb-3 sm:mb-5">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-[#FFEAD0] drop-shadow-xs">
+          <div className="flex items-center gap-3 mb-2 sm:mb-4">
+            <h2 className="text-lg sm:text-2xl md:text-3xl font-semibold tracking-tight text-[#FFEAD0] drop-shadow-xs">
               Software Developer
             </h2>
           </div>
 
           {/* Short description in soft, readable warm pearl */}
-          <p className="max-w-xl text-sm sm:text-base lg:text-lg text-[#FFF0E8]/95 leading-relaxed font-normal mb-5 sm:mb-8 drop-shadow-xs">
+          <p className="max-w-xl text-xs sm:text-base lg:text-lg text-[#FFF0E8]/95 leading-relaxed font-normal mb-4 sm:mb-6 drop-shadow-xs">
             I'm a Software Engineer who genuinely enjoys coding, exploring new technologies, and building things from scratch. I love learning how things work, solving coding challenges, and turning ideas into working applications.
           </p>
 
           {/* Hero Buttons: Rich pearl and champagne styling */}
-          <div className="flex flex-wrap items-center gap-3 sm:gap-6">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-4">
             {/* Primary Button: Resume */}
             <a
               href="/resume.pdf"
@@ -314,11 +306,11 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
                     onNavigate('contact');
                   });
               }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-7 sm:py-3.5 rounded-full bg-gradient-to-r from-[#FFFBF7] via-[#FFF4EA] to-[#FEE8D8] text-[#B82F29] hover:from-white hover:to-[#FFF0E2] font-bold text-xs sm:text-sm md:text-base shadow-lg hover:shadow-2xl border border-white/80 active:scale-95 transition-all duration-200"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full bg-gradient-to-r from-[#FFFBF7] via-[#FFF4EA] to-[#FEE8D8] text-[#B82F29] hover:from-white hover:to-[#FFF0E2] font-bold text-xs sm:text-sm md:text-base shadow-lg hover:shadow-2xl border border-white/80 active:scale-95 transition-all duration-200"
             >
-              <FileText className="w-4 h-4 text-[#B82F29]" />
+              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B82F29]" />
               <span>Resume</span>
-              <ArrowDownRight className="w-4 h-4 text-[#B82F29]" />
+              <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#B82F29]" />
             </a>
 
             {/* Secondary Button: Let's Talk */}
@@ -328,13 +320,32 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
                 e.preventDefault();
                 onNavigate('contact');
               }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-7 sm:py-3.5 rounded-full border border-[#F5C28F]/50 bg-white/10 hover:bg-[#F5C28F]/20 text-[#FFFBF7] hover:text-white hover:border-[#F5C28F] font-semibold text-xs sm:text-sm md:text-base shadow-md active:scale-95 transition-all duration-200 backdrop-blur-md"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-full border border-[#F5C28F]/50 bg-white/10 hover:bg-[#F5C28F]/20 text-[#FFFBF7] hover:text-white hover:border-[#F5C28F] font-semibold text-xs sm:text-sm md:text-base shadow-md active:scale-95 transition-all duration-200 backdrop-blur-md"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>Let's Talk</span>
             </a>
           </div>
 
+        </div>
+      </div>
+
+      {/* Dedicated Mobile Character Stage in the DOM: guarantees full character is visible with zero cutoff */}
+      <div 
+        ref={stageRef}
+        className="relative z-10 w-full flex-1 min-h-[260px] xs:min-h-[290px] sm:min-h-[340px] md:hidden pointer-events-none flex items-end justify-center pb-3"
+      >
+        {/* Mobile tap badge positioned neatly at bottom of the stage */}
+        <div className="pointer-events-auto">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCharacterClick();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#3D0F0E]/75 border border-[#F5C28F]/40 text-[#FDEBD0] text-[11px] font-medium tracking-wide shadow-md active:scale-95 backdrop-blur-md whitespace-nowrap"
+          >
+            <span>{isWaving ? "✨ Smiling & Waving!" : "👋 Tap to say hi"}</span>
+          </button>
         </div>
       </div>
 
