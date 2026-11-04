@@ -7,6 +7,7 @@ const RESTING_FRAME = 43; // Hand completely lowered below frame
 
 export default function HeroSection({ onNavigate, waveTrigger }) {
   const canvasRef = useRef(null);
+  const contentRef = useRef(null);
   const imagesRef = useRef([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
@@ -131,7 +132,7 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
     ctx.fillStyle = BG_COLOR;
     ctx.fillRect(0, 0, displayW, displayH);
 
-    // 2. Position character on the RIGHT side with responsive scale
+    // 2. Position character with responsive scale & collision-free layout
     const videoW = 1280;
     const videoH = 720;
     const isDesktop = displayW >= 1024;
@@ -146,13 +147,40 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
       targetCenterX = displayW * 0.72;
       targetBottomY = displayH + 5;
     } else if (isTablet) {
-      scale = Math.min((displayH * 0.76) / videoH, (displayW * 0.6) / 800);
-      targetCenterX = displayW * 0.70;
+      scale = Math.min((displayH * 0.78) / videoH, (displayW * 0.48) / 800);
+      targetCenterX = displayW * 0.74;
       targetBottomY = displayH + 5;
     } else {
-      scale = Math.min((displayH * 0.52) / videoH, (displayW * 0.95) / 800);
+      // Mobile (< 768px):
+      // Calculate content bottom boundary so character sits below buttons without overlapping
+      let contentBottomY = 0;
+      if (contentRef.current) {
+        const cRect = contentRef.current.getBoundingClientRect();
+        const pRect = canvas.getBoundingClientRect();
+        contentBottomY = cRect.bottom - pRect.top;
+      }
+
+      // Available vertical space in lower half of viewport
+      const availableSpaceBelow = displayH - contentBottomY;
+      
+      // Calculate scale such that character fits within available space below content
+      // with a safe breathing margin above her head
+      if (contentBottomY > 0 && availableSpaceBelow > 180) {
+        const maxFitScale = Math.max(0.32, (availableSpaceBelow - 16) / videoH);
+        scale = Math.min(maxFitScale, (displayW * 0.92) / 800, 0.48);
+      } else {
+        scale = Math.min((displayH * 0.46) / videoH, (displayW * 0.90) / 800);
+      }
+
       targetCenterX = displayW * 0.5;
-      targetBottomY = displayH + 5;
+      
+      // Ensure character top (targetBottomY - drawH) is strictly below buttons
+      const drawH = videoH * scale;
+      if (contentBottomY > 0 && (displayH + 5 - drawH) < (contentBottomY + 12)) {
+        targetBottomY = contentBottomY + drawH + 12;
+      } else {
+        targetBottomY = displayH + 5;
+      }
     }
 
     const drawW = videoW * scale;
@@ -190,7 +218,7 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
   return (
     <section 
       id="home" 
-      className="relative w-full min-h-screen overflow-hidden bg-[#d03d36] flex items-center select-none"
+      className="relative w-full min-h-[100svh] min-h-[640px] lg:min-h-screen overflow-hidden bg-[#d03d36] flex flex-col justify-start lg:justify-center select-none"
     >
       {/* 60FPS Crisp Canvas Character Renderer */}
       <div 
@@ -203,7 +231,7 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
           className="w-full h-full block"
         />
 
-        {/* Subtle, understated wave badge */}
+        {/* Subtle, understated wave badge - desktop */}
         <div className="hidden lg:block absolute bottom-8 right-12 z-10">
           <button 
             onClick={(e) => {
@@ -213,44 +241,60 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#3D0F0E]/70 border border-[#F5C28F]/40 text-[#FDEBD0] hover:text-white hover:bg-[#3D0F0E]/90 transition-all duration-300 text-xs font-semibold tracking-wide shadow-md active:scale-95 backdrop-blur-md"
           >
             <span>👀</span>
-            <span>{isWaving ? "Make mistakes. Learn. Improve. :)" : "Someone's curious! 👋 Tap me "}</span>
+            <span>{isWaving ? "Make mistakes. Learn. Improve. :)" : "Someone's curious! 👋 Tap me"}</span>
+          </button>
+        </div>
+
+        {/* Mobile tap badge */}
+        <div className="lg:hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCharacterClick();
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#3D0F0E]/75 border border-[#F5C28F]/40 text-[#FDEBD0] text-[11px] font-medium tracking-wide shadow-md active:scale-95 backdrop-blur-md whitespace-nowrap"
+          >
+            <span>{isWaving ? "Make mistakes. Learn. Improve. :)" : "👀 Someone's curious! 👋 Tap me "}</span>
           </button>
         </div>
       </div>
 
-      {/* Hero Typography & Content (Enhanced Colors, Responsive Layout) */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-10 lg:px-16 pt-28 pb-16 lg:py-0 pointer-events-none">
-        <div className="max-w-2xl pointer-events-auto">
+      {/* Hero Typography & Content (Mobile-optimized Alignment & Spacing) */}
+      <div 
+        ref={contentRef}
+        className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-10 lg:px-16 pt-16 sm:pt-20 lg:pt-0 pb-4 lg:pb-0 pointer-events-none"
+      >
+        <div className="max-w-2xl md:max-w-md lg:max-w-xl xl:max-w-2xl pointer-events-auto">
           
           {/* Eyebrow Pill with warm champagne border and pulsing gold dot */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-[#3D0F0E]/60 border border-[#F5C28F]/40 backdrop-blur-md shadow-sm mb-6 text-xs font-semibold tracking-wider text-[#FDEBD0] uppercase">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#3D0F0E]/60 border border-[#F5C28F]/40 backdrop-blur-md shadow-sm mb-3 sm:mb-5 text-[10px] sm:text-xs font-semibold tracking-wider text-[#FDEBD0] uppercase">
             <span className="leading-tight">Every challenge is another opportunity to build better</span>
           </div>
 
           {/* Greeting in warm radiant champagne */}
-          <p className="text-lg sm:text-xl font-medium tracking-wide text-[#FCD5B5] mb-2 drop-shadow-xs">
+          <p className="text-base sm:text-lg lg:text-xl font-medium tracking-wide text-[#FCD5B5] mb-1 sm:mb-2 drop-shadow-xs">
             Hey, I'm
           </p>
 
           {/* Name: Luminous luxury gradient heading */}
-          <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight leading-none mb-4 bg-gradient-to-r from-[#FFFFFF] via-[#FFF5E6] to-[#FCD5B5] bg-clip-text text-transparent drop-shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
+          <h1 className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-bold tracking-tight leading-tight sm:leading-none mb-2 sm:mb-4 bg-gradient-to-r from-[#FFFFFF] via-[#FFF5E6] to-[#FCD5B5] bg-clip-text text-transparent drop-shadow-[0_4px_24px_rgba(0,0,0,0.3)]">
             Moushmi
           </h1>
 
           {/* Designation with warm amber accent line */}
-          <div className="flex items-center gap-3 mb-5">
-            <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#FFEAD0] drop-shadow-xs">
+          <div className="flex items-center gap-3 mb-3 sm:mb-5">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight text-[#FFEAD0] drop-shadow-xs">
               Software Developer
             </h2>
           </div>
 
           {/* Short description in soft, readable warm pearl */}
-          <p className="max-w-xl text-base sm:text-lg text-[#FFF0E8] leading-relaxed font-normal mb-8 drop-shadow-xs">
+          <p className="max-w-xl text-sm sm:text-base lg:text-lg text-[#FFF0E8]/95 leading-relaxed font-normal mb-5 sm:mb-8 drop-shadow-xs">
             I'm a Software Engineer who genuinely enjoys coding, exploring new technologies, and building things from scratch. I love learning how things work, solving coding challenges, and turning ideas into working applications.
           </p>
 
           {/* Hero Buttons: Rich pearl and champagne styling */}
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6">
             {/* Primary Button: Resume */}
             <a
               href="/resume.pdf"
@@ -270,7 +314,7 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
                     onNavigate('contact');
                   });
               }}
-              className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-gradient-to-r from-[#FFFBF7] via-[#FFF4EA] to-[#FEE8D8] text-[#B82F29] hover:from-white hover:to-[#FFF0E2] font-bold text-sm sm:text-base shadow-lg hover:shadow-2xl border border-white/80 active:scale-95 transition-all duration-200"
+              className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-7 sm:py-3.5 rounded-full bg-gradient-to-r from-[#FFFBF7] via-[#FFF4EA] to-[#FEE8D8] text-[#B82F29] hover:from-white hover:to-[#FFF0E2] font-bold text-xs sm:text-sm md:text-base shadow-lg hover:shadow-2xl border border-white/80 active:scale-95 transition-all duration-200"
             >
               <FileText className="w-4 h-4 text-[#B82F29]" />
               <span>Resume</span>
@@ -284,7 +328,7 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
                 e.preventDefault();
                 onNavigate('contact');
               }}
-              className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full border border-[#F5C28F]/50 bg-white/10 hover:bg-[#F5C28F]/20 text-[#FFFBF7] hover:text-white hover:border-[#F5C28F] font-semibold text-sm sm:text-base shadow-md active:scale-95 transition-all duration-200 backdrop-blur-md"
+              className="inline-flex items-center gap-2 px-5 py-2.5 sm:px-7 sm:py-3.5 rounded-full border border-[#F5C28F]/50 bg-white/10 hover:bg-[#F5C28F]/20 text-[#FFFBF7] hover:text-white hover:border-[#F5C28F] font-semibold text-xs sm:text-sm md:text-base shadow-md active:scale-95 transition-all duration-200 backdrop-blur-md"
             >
               <Send className="w-4 h-4" />
               <span>Let's Talk</span>
