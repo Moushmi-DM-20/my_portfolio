@@ -245,7 +245,7 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#3D0F0E]/70 border border-[#F5C28F]/40 text-[#FDEBD0] hover:text-white hover:bg-[#3D0F0E]/90 transition-all duration-300 text-xs font-semibold tracking-wide shadow-md active:scale-95 backdrop-blur-md"
           >
             <span>👀</span>
-            <span>{isWaving ? "Make mistakes. Learn. Improve. :)" : "Someone's curious! 👋 Tap me"}</span>
+            <span>{isWaving ? "Ideas never sit still :)" : "Someone's curious! 👋 Tap me"}</span>
           </button>
         </div>
       </div>
@@ -343,7 +343,7 @@ export default function HeroSection({ onNavigate, waveTrigger }) {
             }}
             className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#3D0F0E]/75 border border-[#F5C28F]/40 text-[#FDEBD0] text-xs font-medium tracking-wide shadow-md active:scale-95 backdrop-blur-md whitespace-nowrap"
           >
-            <span>{isWaving ? "✨ Smiling & Waving!" : "👋 Tap to say hi"}</span>
+            <span>{isWaving ? "Ideas never sit still :)" : "Someone's curious! 👋 Tap me"}</span>
           </button>
         </div>
       </div>
